@@ -15,6 +15,8 @@ class Receita(BaseModel):
     ingredientes: List[str]
     modo_de_preparo: str
 
+receitas: List[Receita] = []
+
 
 '''receitas = [
     {
@@ -63,56 +65,59 @@ receitas: List[Receita] = []
 
 @app.get("/")
 def hello():
-    return {"title": "livro de receitas"}
+    return {"title": "Livro de Receitas"}
+
 
 @app.get("/receitas")
 def get_todas_receitas():
-    return receitas 
+    return receitas
+
 
 @app.get("/receitas/id/{id}")
 def get_receita_por_id(id: int):
     for receita in receitas:
         if receita.id == id:
             return receita
-        return {"mensagem": "receita não encontrada"}
-    
+    return {"mensagem": "Receita não encontrada"}
+
+
 @app.get("/receitas/{nome_receita}")
 def get_receita_por_nome(nome_receita: str):
     for receita in receitas:
-        if receita.nome.lower() == nome_receita.lower:
-          return receita
-    
-    return {"mensagem": "receita não encontrada"}
+        if receita.nome.lower() == nome_receita.lower():
+            return receita
+    return {"mensagem": "Receita não encontrada"}
+
 
 @app.post("/receitas")
-def create_receita(dados: Receita):
-    if not receitas:
-        novo_id=1
-    else: 
-        novo_id = receitas[-1].id
-        +1
-        nova_receita = Receita(
-            id=novo_id,
-            nome=dados.nome,
+def create_receita(dados: CreateReceita):
+    # Gera ID automaticamente
+    novo_id = receitas[-1].id + 1 if receitas else 1
 
+    nova_receita = Receita(
+        id=novo_id,
+        nome=dados.nome,
         ingredientes=dados.ingredientes,
         modo_de_preparo=dados.modo_de_preparo
-        )
+    )
 
     receitas.append(nova_receita)
-    return nova_receita
-    
+    return {"mensagem": "Receita criada com sucesso!", "receita": nova_receita}
+
+
 @app.put("/receitas/{id}")
 def update_receita(id: int, dados: CreateReceita):
+    # Verifica se há duplicata de nome
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
             return {"mensagem": "Já existe uma receita com esse nome"}
 
-    if dados.nome == "" or dados.modo_de_preparo == "" or dados.ingredientes == []:
+    # Valida campos
+    if not dados.nome.strip() or not dados.modo_de_preparo.strip() or not dados.ingredientes:
         return {"mensagem": "Nenhum campo pode estar vazio"}
 
-    for i in range(len(receitas)):
-        if receitas[i].id == id:
+    for i, receita in enumerate(receitas):
+        if receita.id == id:
             receita_atualizada = Receita(
                 id=id,
                 nome=dados.nome,
@@ -120,15 +125,15 @@ def update_receita(id: int, dados: CreateReceita):
                 modo_de_preparo=dados.modo_de_preparo
             )
             receitas[i] = receita_atualizada
-            return {"mensagem": "Receita atualizada", "receita": receita_atualizada}
-        
+            return {"mensagem": "Receita atualizada com sucesso!", "receita": receita_atualizada}
+
     return {"mensagem": "Receita não encontrada"}
+
 
 @app.delete("/receitas/{id}")
 def deletar_receita(id: int):
-    for i in range(len(receitas)):
-        if receitas[i].id == id:
-            receita_deletada = receitas.pop(i)
-            return {"mensagem": "Receita deletada"}
-        
-        return {"mensagem": "Receita não encontrada"}
+    for i, receita in enumerate(receitas):
+        if receita.id == id:
+            receita_removida = receitas.pop(i)
+            return {"mensagem": "Receita deletada com sucesso!", "receita": receita_removida}
+    return {"mensagem": "Receita não encontrada"}
