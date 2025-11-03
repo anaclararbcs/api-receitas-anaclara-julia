@@ -1,11 +1,136 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
 
-app = FastAPI(title='API julia e ana clara')
+app = FastAPI(title='API da Ana Clara e da Júlia Emily')
 
-@app.get("/aluno")
-def get_aluno():
-    return {"nome do aluno apos /"}
+class CreateReceita(BaseModel):
+    nome: str
+    ingredientes: List[str]
+    modo_de_preparo: str
 
-@app.get("/aluno/{nome_aluno}")
-def get_aluno_by_name(nome_aluno: str):
-    return {"o nome do aluno é": nome_aluno}
+class Receita(BaseModel):
+    id: int
+    nome: str
+    ingredientes: List[str]
+    modo_de_preparo: str
+
+
+receitas: List[Receita] = []
+
+'''receitas = [
+    {
+        "nome": "brownie",
+        "ingredientes": ["3 ovos", "6 colheres de açúcar", "2 xícaras de chocolate em pó"],
+        "utensilios": ["tigela", "forma"],
+        "modo_de_preparo": "Misture tudo e leve ao forno por 40 minutos."
+    },
+    {
+        "nome": "torta",
+        "ingredientes": ["3 ovos", "1 xícara de leite", "2 xícaras de farinha"],
+        "utensilios": ["liquidificador", "forma"],
+        "modo_de_preparo": "Bata tudo no liquidificador e asse por 30 minutos."
+    },
+    {
+        "nome": "bolo de cenoura",
+        "ingredientes": ["3 cenouras", "3 ovos", "2 xícaras de açúcar"],
+        "utensilios": ["liquidificador", "forma"],
+        "modo_de_preparo": "Bata os ingredientes e asse por 40 minutos."
+    },
+]
+  [
+ {
+        "nome": "panqueca",
+        "ingredientes": ["2 ovos", "1 xícara de leite", "1 xícara de farinha"],
+        "utensilios": ["frigideira"],
+        "modo_de_preparo": "Bata tudo, despeje na frigideira e recheie a gosto."
+    },
+    {
+        "nome": "pudim",
+        "ingredientes": ["1 lata de leite condensado", "2 latas de leite", "3 ovos"],
+        "utensilios": ["liquidificador", "forma de pudim"],
+        "modo_de_preparo": "Bata, caramelize a forma e cozinhe em banho-maria."
+    },
+    {
+        "nome": "mousse de maracujá",
+        "ingredientes": ["1 lata de leite condensado", "1 lata de creme de leite", "suco de maracujá"],
+        "utensilios": ["liquidificador"],
+        "modo_de_preparo": "Bata tudo no liquidificador e leve à geladeira."
+    }
+]
+  
+]'''
+
+@app.get("/")
+def hello():
+    return {"title": "livro de receitas"}
+
+@app.get("/receitas/{nome_receita}")
+def get_receita_por_nome(nome_receita: str):
+    for receita in receitas:
+        if receita.nome == nome_receita:
+          return receita
+        
+    return {"mensagem": "receita não encontrada"}
+
+@app.get("/receitas")
+def get_todas_receitas():
+    return receitas 
+
+@app.post("/receitas")
+def create_receita(dados: Receita):
+    if not receitas:
+        novo_id=1
+    else: 
+        novo_id = receitas[-1].id
+        +1
+        nova_receita = Receita(
+            id=novo_id,
+            nome=dados.nome,
+
+        ingredientes=dados.ingredientes,
+        modo_de_preparo=dados.modo_de_preparo
+        )
+
+    receitas.append(nova_receita)
+    return {"mensagem": "receita adicionada", "receita": nova_receita}
+
+@app.get("/receitas/id/{id}")
+def get_receita_por_id(id: int):
+    for receita in receitas:
+        if receita["id"] == id:
+            return {"receita encontrada": receita}
+        return {"mensagem": "receita não encontrada"}
+    
+@app.put("/receitas/id/{id}")
+def update_receita(id: int, dados: Receita):
+    for r in receitas:
+        if r.nome == dados.nome and r.id != id:
+            return {"mensagem": "Já existe uma receita com esse nome"}
+
+    if dados.nome == "" or dados.modo_de_preparo == "" or dados.ingredientes == []:
+        return {"mensagem": "Nenhum campo pode estar vazio"}
+
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
+            receita_atualizada = Receita(
+                id=id,
+                nome=dados.nome,
+                ingredientes=dados.ingredientes,
+                modo_de_preparo=dados.modo_de_preparo
+            )
+            receitas[i] = receita_atualizada
+            return {"mensagem": "Receita atualizada", "receita": receita_atualizada}
+
+    return {"mensagem": "Receita não encontrada"}
+
+@app.delete("/receitas/{id}")
+def deletar_receita(id: int):
+    if receitas == []:
+        return {"mensagem": "Não existe receitas para deletar"}
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
+            receitas.pop(i)
+            return {"mensagem": "Receita deletada"}
+        
+        return {"mensagem": "Receita não encontrada"}
