@@ -15,9 +15,6 @@ class Receita(BaseModel):
     ingredientes: List[str]
     modo_de_preparo: str
 
-receitas: List[Receita] = []
-
-
 '''receitas = [
     {
         "nome": "brownie",
@@ -32,6 +29,7 @@ receitas: List[Receita] = []
         "modo_de_preparo": "Bata tudo no liquidificador e asse por 30 minutos."
     },
     {
+        "id"=3,
         "nome": "bolo de cenoura",
         "ingredientes": ["3 cenouras", "3 ovos", "2 xícaras de açúcar"],
         "utensilios": ["liquidificador", "forma"],
@@ -40,18 +38,21 @@ receitas: List[Receita] = []
 ]
   [
  {
+        "id"=4,
         "nome": "panqueca",
         "ingredientes": ["2 ovos", "1 xícara de leite", "1 xícara de farinha"],
         "utensilios": ["frigideira"],
         "modo_de_preparo": "Bata tudo, despeje na frigideira e recheie a gosto."
     },
     {
+        "id"=5,
         "nome": "pudim",
         "ingredientes": ["1 lata de leite condensado", "2 latas de leite", "3 ovos"],
         "utensilios": ["liquidificador", "forma de pudim"],
         "modo_de_preparo": "Bata, caramelize a forma e cozinhe em banho-maria."
     },
     {
+        "id"=6,
         "nome": "mousse de maracujá",
         "ingredientes": ["1 lata de leite condensado", "1 lata de creme de leite", "suco de maracujá"],
         "utensilios": ["liquidificador"],
@@ -60,8 +61,6 @@ receitas: List[Receita] = []
 ]
   
 ]'''
-
-receitas: List[Receita] = []
 
 @app.get("/")
 def hello():
@@ -107,12 +106,10 @@ def create_receita(dados: CreateReceita):
 
 @app.put("/receitas/{id}")
 def update_receita(id: int, dados: CreateReceita):
-    # Verifica se há duplicata de nome
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
             return {"mensagem": "Já existe uma receita com esse nome"}
 
-    # Valida campos
     if not dados.nome.strip() or not dados.modo_de_preparo.strip() or not dados.ingredientes:
         return {"mensagem": "Nenhum campo pode estar vazio"}
 
