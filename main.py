@@ -16,8 +16,6 @@ class Receita(BaseModel):
     modo_de_preparo: str
 
 
-receitas: List[Receita] = []
-
 '''receitas = [
     {
         "nome": "brownie",
@@ -61,21 +59,30 @@ receitas: List[Receita] = []
   
 ]'''
 
+receitas: List[Receita] = []
+
 @app.get("/")
 def hello():
     return {"title": "livro de receitas"}
 
-@app.get("/receitas/{nome_receita}")
-def get_receita_por_nome(nome_receita: str):
-    for receita in receitas:
-        if receita.nome == nome_receita:
-          return receita
-        
-    return {"mensagem": "receita não encontrada"}
-
 @app.get("/receitas")
 def get_todas_receitas():
     return receitas 
+
+@app.get("/receitas/id/{id}")
+def get_receita_por_id(id: int):
+    for receita in receitas:
+        if receita.id == id:
+            return receita
+        return {"mensagem": "receita não encontrada"}
+    
+@app.get("/receitas/{nome_receita}")
+def get_receita_por_nome(nome_receita: str):
+    for receita in receitas:
+        if receita.nome.lower() == nome_receita.lower:
+          return receita
+    
+    return {"mensagem": "receita não encontrada"}
 
 @app.post("/receitas")
 def create_receita(dados: Receita):
@@ -93,19 +100,12 @@ def create_receita(dados: Receita):
         )
 
     receitas.append(nova_receita)
-    return {"mensagem": "receita adicionada", "receita": nova_receita}
-
-@app.get("/receitas/id/{id}")
-def get_receita_por_id(id: int):
-    for receita in receitas:
-        if receita["id"] == id:
-            return {"receita encontrada": receita}
-        return {"mensagem": "receita não encontrada"}
+    return nova_receita
     
-@app.put("/receitas/id/{id}")
-def update_receita(id: int, dados: Receita):
+@app.put("/receitas/{id}")
+def update_receita(id: int, dados: CreateReceita):
     for r in receitas:
-        if r.nome == dados.nome and r.id != id:
+        if r.nome.lower() == dados.nome.lower() and r.id != id:
             return {"mensagem": "Já existe uma receita com esse nome"}
 
     if dados.nome == "" or dados.modo_de_preparo == "" or dados.ingredientes == []:
@@ -121,16 +121,14 @@ def update_receita(id: int, dados: Receita):
             )
             receitas[i] = receita_atualizada
             return {"mensagem": "Receita atualizada", "receita": receita_atualizada}
-
+        
     return {"mensagem": "Receita não encontrada"}
 
 @app.delete("/receitas/{id}")
 def deletar_receita(id: int):
-    if receitas == []:
-        return {"mensagem": "Não existe receitas para deletar"}
     for i in range(len(receitas)):
         if receitas[i].id == id:
-            receitas.pop(i)
+            receita_deletada = receitas.pop(i)
             return {"mensagem": "Receita deletada"}
         
         return {"mensagem": "Receita não encontrada"}
