@@ -36,10 +36,9 @@ def get_receita_por_id(id: int):
 @app.get("/receitas/{nome_receita}")
 def get_receita_por_nome(nome_receita: str):
     for receita in receitas:
-        if receita.nome.lower() == nome_receita.lower:
+        if receita.nome == nome_receita:
           return receita
-    
-    return {"mensagem": "receita não encontrada"}
+        return {"mensagem": "receita não encontrada"}
 
 @app.post("/receitas")
 def create_receita(dados: Receita):
