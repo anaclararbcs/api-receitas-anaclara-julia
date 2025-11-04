@@ -1,20 +1,9 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from http import HTTPStatus
+from fastapi import FastAPI, HTTPException
 from typing import List
+from .schema import CreateReceita, Receita
 
 app = FastAPI(title='API da Ana Clara e da Júlia Emily')
-
-class CreateReceita(BaseModel):
-    nome: str
-    ingredientes: List[str]
-    modo_de_preparo: str
-
-class Receita(BaseModel):
-    id: int
-    nome: str
-    ingredientes: List[str]
-    modo_de_preparo: str
-
 
 receitas: List[Receita] = []
 
@@ -22,25 +11,26 @@ receitas: List[Receita] = []
 def hello():
     return {"title": "livro de receitas"}
 
-@app.get("/receitas")
+@app.get("/receitas", response_model=List[Receita], status_code=HTTPStatus.OK)
 def get_todas_receitas():
     return receitas 
 
-@app.get("/receitas/id/{id}")
+@app.get("/receitas/id/{id}", response_model=[Receita], status_code=HTTPStatus.OK)
 def get_receita_por_id(id: int):
     for receita in receitas:
         if receita.id == id:
             return receita
-        return {"mensagem": "receita não encontrada"}
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="receita não encontrada")
     
-@app.get("/receitas/{nome_receita}")
+@app.get("/receitas/{nome_receita}", response_model=Receita, status_code=HTTPStatus.OK)
 def get_receita_por_nome(nome_receita: str):
     for receita in receitas:
         if receita.nome == nome_receita:
           return receita
-        return {"mensagem": "receita não encontrada"}
+        
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="receita não encontrada")
 
-@app.post("/receitas")
+@app.post("/receitas", response_model=Receita, status_code=HTTPStatus.OK)
 def create_receita(dados: Receita):
     if not receitas:
         novo_id=1
@@ -56,14 +46,14 @@ def create_receita(dados: Receita):
     receitas.append(nova_receita)
     return nova_receita
     
-@app.put("/receitas/{id}")
+@app.put("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def update_receita(id: int, dados: CreateReceita):
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
             return {"mensagem": "Já existe uma receita com esse nome"}
 
     if dados.nome == "" or dados.modo_de_preparo == "" or dados.ingredientes == []:
-        return {"mensagem": "Nenhum campo pode estar vazio"}
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="o campo não pode estar vazio")
 
     for i in range(len(receitas)):
         if receitas[i].id == id:
@@ -76,13 +66,13 @@ def update_receita(id: int, dados: CreateReceita):
             receitas[i] = receita_atualizada
             return {"mensagem": "Receita atualizada", "receita": receita_atualizada}
         
-    return {"mensagem": "Receita não encontrada"}
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="receita não encontrada")
 
-@app.delete("/receitas/{id}")
+@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def deletar_receita(id: int):
     for i in range(len(receitas)):
         if receitas[i].id == id:
             receita_deletada = receitas.pop(i)
             return {"mensagem": "Receita deletada"}
         
-        return {"mensagem": "Receita não encontrada"}
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="receita não encontrada")
