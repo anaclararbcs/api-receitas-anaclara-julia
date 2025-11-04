@@ -16,49 +16,6 @@ class Receita(BaseModel):
     modo_de_preparo: str
 
 
-'''receitas = [
-    {
-        "nome": "brownie",
-        "ingredientes": ["3 ovos", "6 colheres de açúcar", "2 xícaras de chocolate em pó"],
-        "utensilios": ["tigela", "forma"],
-        "modo_de_preparo": "Misture tudo e leve ao forno por 40 minutos."
-    },
-    {
-        "nome": "torta",
-        "ingredientes": ["3 ovos", "1 xícara de leite", "2 xícaras de farinha"],
-        "utensilios": ["liquidificador", "forma"],
-        "modo_de_preparo": "Bata tudo no liquidificador e asse por 30 minutos."
-    },
-    {
-        "nome": "bolo de cenoura",
-        "ingredientes": ["3 cenouras", "3 ovos", "2 xícaras de açúcar"],
-        "utensilios": ["liquidificador", "forma"],
-        "modo_de_preparo": "Bata os ingredientes e asse por 40 minutos."
-    },
-]
-  [
- {
-        "nome": "panqueca",
-        "ingredientes": ["2 ovos", "1 xícara de leite", "1 xícara de farinha"],
-        "utensilios": ["frigideira"],
-        "modo_de_preparo": "Bata tudo, despeje na frigideira e recheie a gosto."
-    },
-    {
-        "nome": "pudim",
-        "ingredientes": ["1 lata de leite condensado", "2 latas de leite", "3 ovos"],
-        "utensilios": ["liquidificador", "forma de pudim"],
-        "modo_de_preparo": "Bata, caramelize a forma e cozinhe em banho-maria."
-    },
-    {
-        "nome": "mousse de maracujá",
-        "ingredientes": ["1 lata de leite condensado", "1 lata de creme de leite", "suco de maracujá"],
-        "utensilios": ["liquidificador"],
-        "modo_de_preparo": "Bata tudo no liquidificador e leve à geladeira."
-    }
-]
-  
-]'''
-
 receitas: List[Receita] = []
 
 @app.get("/")
@@ -89,16 +46,14 @@ def create_receita(dados: Receita):
     if not receitas:
         novo_id=1
     else: 
-        novo_id = receitas[-1].id
-        +1
-        nova_receita = Receita(
-            id=novo_id,
-            nome=dados.nome,
-
+        novo_id = receitas[-1].id+1
+        
+    nova_receita = Receita(
+        id=novo_id,
+        nome=dados.nome,
         ingredientes=dados.ingredientes,
         modo_de_preparo=dados.modo_de_preparo
-        )
-
+    )
     receitas.append(nova_receita)
     return nova_receita
     
