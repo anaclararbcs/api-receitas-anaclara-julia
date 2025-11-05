@@ -1,12 +1,30 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException  
 from typing import List
-from .schema import CreateReceita, Receita
+from schema import CreateReceita, Receita
 
 app = FastAPI(title='API da Ana Clara e da Júlia Emily')
 
 receitas: List[Receita] = []
 
+def receita_existe(nome: str):
+    for receita in receitas:
+        if receita.nome == nome:
+            return True
+    return False
+
+
+def receita_por_id(id: int):
+    for receita in receitas:
+        if receita.id == id:
+            return receita
+    return None
+
+def receita_por_nome(nome: str):
+    for receita in receitas:
+        if receita.nome == nome:
+            return receita
+    return None
 
 @app.get("/", status_code=HTTPStatus.OK)
 def hello():
@@ -42,10 +60,7 @@ def create_receita(dados: CreateReceita):
 
     for r in receitas:
         if r.nome.lower() == dados.nome.lower():
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT,
-                detail="Já existe uma receita com esse nome"
-            )
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
 
     nova_receita = Receita(
         id=novo_id,
@@ -60,17 +75,11 @@ def create_receita(dados: CreateReceita):
 @app.put("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def update_receita(id: int, dados: CreateReceita):
     if not dados.nome or not dados.modo_de_preparo or not dados.ingredientes:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail="Campos obrigatórios não podem estar vazios"
-        )
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Campos obrigatórios não podem estar vazios")
 
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT,
-                detail="Já existe uma receita com esse nome"
-            )
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
 
     for i in range(len(receitas)):
         if receitas[i].id == id:
