@@ -1,9 +1,11 @@
 from http import HTTPStatus
 from fastapi import FastAPI, HTTPException  
 from typing import List
-from schema import CreateReceita, Receita
+from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
 
 app = FastAPI(title='API da Ana Clara e da Júlia Emily')
+
+usuarios: List[Usuario] = []
 
 receitas: List[Receita] = []
 
@@ -103,3 +105,25 @@ def deletar_receita(id: int):
             return receita_deletada
 
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+
+
+@app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
+def create_usuarios(dados: BaseUsuario):
+    if not usuarios:
+        novo_id = 1
+    else:
+        novo_id = usuarios[-1].id + 1
+
+    for u in usuarios:
+        if u.email.lower() == dados.email.lower():
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe um usuário com esse email")
+
+    novo_usuario = UsuarioPublic(
+        id=novo_id,
+        nome_usuario=dados.nome_usuario,
+        email=dados.email,
+    )
+
+    usuarios.append(novo_usuario)
+
+    return novo_usuario
