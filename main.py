@@ -1,7 +1,7 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException #type: ignore
 from typing import List
-from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic, CreateUsuario
+from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
 
 app = FastAPI(title="API da Ana Clara e da Júlia Emily")
 
@@ -28,6 +28,7 @@ def usuario_por_id(id: int):
         if usuario.id == id:
             return usuario
     return None
+
 
 
 @app.get("/", status_code=HTTPStatus.OK)
@@ -91,12 +92,15 @@ def update_receita(id: int, dados: CreateReceita):
     return receita
 
 
-@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK) 
+@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def deletar_receita(id: int):
-    for i in range(len(receitas)): 
-        if receitas[i].id == id: receita_deletada = receitas.pop(i) 
-        return receita_deletada
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
+            receita_deletada = receitas.pop(i)
+            return receita_deletada
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+
+
 
 @app.get("/usuarios", response_model=List[UsuarioPublic], status_code=HTTPStatus.OK)
 def get_todos_usuarios():
@@ -120,7 +124,7 @@ def get_usuario_por_nome(nome_usuario: str):
 
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
-def create_usuario(dados: CreateUsuario):
+def create_usuario(dados: BaseUsuario):
     novo_id = 1 if not usuarios else usuarios[-1].id + 1
 
     for u in usuarios:
@@ -152,13 +156,14 @@ def update_usuario(id: int, dados: BaseUsuario):
 
     usuario.nome_usuario = dados.nome_usuario
     usuario.email = dados.email
+    usuario.senha = dados.senha
     return usuario
 
 
 @app.delete("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
 def deletar_usuario(id: int):
     for i in range(len(usuarios)):
-         if usuarios[i].id == id:
-             usuario_deletado = usuarios.pop(i) 
-             return usuario_deletado
+        if usuarios[i].id == id:
+            usuario_deletado = usuarios.pop(i)
+            return usuario_deletado
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
