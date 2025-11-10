@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from fastapi import FastAPI, HTTPException
 from typing import List
-from .schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic, CreateUsuario
+from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic, CreateUsuario
 
 app = FastAPI(title="API da Ana Clara e da Júlia Emily")
 
@@ -91,13 +91,12 @@ def update_receita(id: int, dados: CreateReceita):
     return receita
 
 
-@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
+@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK) 
 def deletar_receita(id: int):
-    for i, receita in enumerate(receitas):
-        if receita.id == id:
-            return receitas.pop(i)
-    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
-
+    for i in range(len(receitas)): 
+        if receitas[i].id == id: receita_deletada = receitas.pop(i) 
+        return receita_deletada
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
 @app.get("/usuarios", response_model=List[UsuarioPublic], status_code=HTTPStatus.OK)
 def get_todos_usuarios():
@@ -159,7 +158,7 @@ def update_usuario(id: int, dados: BaseUsuario):
 @app.delete("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
 def deletar_usuario(id: int):
     for i in range(len(usuarios)):
-        if usuarios[i].id == id:
-            usuario_deletado = usuarios.pop(i) 
-            return usuario_deletado
+         if usuarios[i].id == id:
+             usuario_deletado = usuarios.pop(i) 
+             return usuario_deletado
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
