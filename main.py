@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from fastapi import FastAPI, HTTPException
 from typing import List
-from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
+from .schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic, CreateUsuario
 
 app = FastAPI(title="API da Ana Clara e da Júlia Emily")
 
@@ -9,25 +9,25 @@ usuarios: List[Usuario] = []
 receitas: List[Receita] = []
 
 
-def receita_existe(nome: str): 
+def receita_existe(nome: str):
     for receita in receitas:
-         if receita.nome == nome: 
-            return True 
-         return False
-
-def receita_por_id(id: int): 
-    for receita in receitas: 
-        if receita.id == id: 
-            return receita 
-        return None
+        if receita.nome.lower() == nome.lower():
+            return True
+    return False
 
 
-def receita_por_nome(nome: str):
-    for receita in receitas: 
-        if receita.nome == nome:
-             return receita 
-        return None
+def receita_por_id(id: int):
+    for receita in receitas:
+        if receita.id == id:
+            return receita
+    return None
 
+
+def usuario_por_id(id: int):
+    for usuario in usuarios:
+        if usuario.id == id:
+            return usuario
+    return None
 
 
 @app.get("/", status_code=HTTPStatus.OK)
@@ -93,10 +93,9 @@ def update_receita(id: int, dados: CreateReceita):
 
 @app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def deletar_receita(id: int):
-    for i in range(len(receitas)):
-         if receitas[i].id == id:
-             receita_deletada = receitas.pop(i) 
-             return receita_deletada
+    for i, receita in enumerate(receitas):
+        if receita.id == id:
+            return receitas.pop(i)
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
 
@@ -121,16 +120,22 @@ def get_usuario_por_nome(nome_usuario: str):
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
 
-@app.post("/usuarios", response_model=Usuario, status_code=HTTPStatus.CREATED) 
-def create_Usuario(dados: create_usuarios):
-    if not usuarios: 
-        novo_id = 1 
-    else: 
-     novo_id = usuarios[-1].id + 1 
+@app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
+def create_usuario(dados: CreateUsuario):
+    novo_id = 1 if not usuarios else usuarios[-1].id + 1
 
-for r in usuarios: 
-    if r.nome.lower() == dados.nome.lower():
-         raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe um usuario com esse nome") novo_usuario = Usuario( id=novo_id, nome=dados.nome, ingredientes=dados.ingredientes, modo_de_preparo=dados.modo_de_preparo ) receitas.append(novo_usuario) return novo_usuario
+    for u in usuarios:
+        if u.nome_usuario.lower() == dados.nome_usuario.lower():
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe um usuário com esse nome")
+
+    novo_usuario = Usuario(
+        id=novo_id,
+        nome_usuario=dados.nome_usuario,
+        email=dados.email,
+        senha=dados.senha
+    )
+    usuarios.append(novo_usuario)
+    return novo_usuario
 
 
 @app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
@@ -154,7 +159,7 @@ def update_usuario(id: int, dados: BaseUsuario):
 @app.delete("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
 def deletar_usuario(id: int):
     for i in range(len(usuarios)):
-         if usuarios[i].id == id:
-             usuario_deletado = usuarios.pop(i)
-             return usuario_deletado
+        if usuarios[i].id == id:
+            usuario_deletado = usuarios.pop(i) 
+            return usuario_deletado
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
