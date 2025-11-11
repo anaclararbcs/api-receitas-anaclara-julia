@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException #type: ignore
+from fastapi import FastAPI, HTTPException 
 from typing import List
 from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
 
