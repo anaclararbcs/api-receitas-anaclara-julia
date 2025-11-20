@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config 
 from sqlalchemy import pool
 
 from alembic import context  
@@ -44,8 +44,8 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
     )
 
-    with context.begin_transaction():
-        context.run_migrations()
+    # with context.begin_transaction():
+    #     context.run_migrations()
 
 
 def run_migrations_online() -> None:
