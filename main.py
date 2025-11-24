@@ -1,7 +1,14 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException 
+from subprocess import DETACHED_PROCESS
+from fastapi import FastAPI, HTTPException, Depends 
 from typing import List
 from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
+from config import Settings
+from models import User
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from database import get_session
+
 
 app = FastAPI(title="API da Ana Clara e da Júlia Emily")
 
@@ -102,8 +109,11 @@ def deletar_receita(id: int):
 
 
 
-@app.get("/usuarios", response_model=List[UsuarioPublic], status_code=HTTPStatus.OK)
-def get_todos_usuarios():
+@app.get("/usuarios",  status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
+def get_todos_usuarios(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
+):
+    usuarios = session.scalars(select(Usuario).offset(skip).limit(limit)).all()
     return usuarios
 
 
@@ -123,22 +133,43 @@ def get_usuario_por_nome(nome_usuario: str):
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
 
+from fastapi import HTTPException, Depends
+from http import HTTPStatus
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
-def create_usuario(dados: BaseUsuario):
-    novo_id = 1 if not usuarios else usuarios[-1].id + 1
-
-    for u in usuarios:
-        if u.nome_usuario.lower() == dados.nome_usuario.lower():
-            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe um usuário com esse nome")
-
-    novo_usuario = Usuario(
-        id=novo_id,
-        nome_usuario=dados.nome_usuario,
-        email=dados.email,
-        senha=dados.senha
+def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(User).where(
+            (User.nome_usuario == dados.nome_usuario) |
+            (User.email == dados.email)
+        )
     )
-    usuarios.append(novo_usuario)
-    return novo_usuario
+
+    if db_user:
+        if db_user.nome_usuario == dados.nome_usuario:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail="Nome de usuário já existe",
+            )
+        elif db_user.email == dados.email:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail="Email já existe",
+            )
+
+    db_user = User(
+        nome_usuario=dados.nome_usuario,
+        senha=dados.senha,
+        email=dados.email
+    )
+
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
 
 
 @app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
