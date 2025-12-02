@@ -1,8 +1,7 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException, Depends 
+from fastapi import FastAPI, HTTPException, Depends
 from typing import List
-from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
-from config import settings
+from schema import CreateReceita, Receita, BaseUsuario, UsuarioPublic
 from models import User
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,10 +14,7 @@ app = FastAPI(title="API de Receitas")
 
 
 def receita_existe(nome: str):
-    for receita in receitas:
-        if receita.nome.lower() == nome.lower():
-            return True
-    return False
+    return any(receita.nome.lower() == nome.lower() for receita in receitas)
 
 
 def receita_por_id(id: int):
@@ -28,17 +24,10 @@ def receita_por_id(id: int):
     return None
 
 
-def usuario_por_id(id: int):
-    for usuario in usuario:
-        if usuario.id == id:
-            return usuario
-    return None
-
-
-
 @app.get("/", status_code=HTTPStatus.OK)
 def hello():
     return {"title": "Livro de Receitas"}
+
 
 
 @app.get("/receitas", response_model=List[Receita], status_code=HTTPStatus.OK)
@@ -68,6 +57,7 @@ def create_receita(dados: CreateReceita):
         raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
 
     novo_id = 1 if not receitas else receitas[-1].id + 1
+
     nova_receita = Receita(
         id=novo_id,
         nome=dados.nome,
@@ -84,9 +74,6 @@ def update_receita(id: int, dados: CreateReceita):
     if not receita:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
-    if not dados.nome or not dados.ingredientes or not dados.modo_de_preparo:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Campos obrigatórios não podem estar vazios")
-
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
@@ -101,42 +88,12 @@ def update_receita(id: int, dados: CreateReceita):
 def deletar_receita(id: int):
     for i in range(len(receitas)):
         if receitas[i].id == id:
-            receita_deletada = receitas.pop(i)
-            return receita_deletada
+            return receitas.pop(i)
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
-
-
-
-@app.get("/usuarios",  status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
-def get_todos_usuarios(
-    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
-):
-    usuarios = session.scalars(select(Usuario).offset(skip).limit(limit)).all()
-    return usuarios
-
-
-@app.get("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def get_usuario_por_id(id: int, session: Session = Depends(get_session)):
-    db_user = session.scalar(
-        select(Usuario).where((Usuario.id == id))
-    )
-    if db_user:
-        return db_user
-    
-    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
-
-@app.get("/usuarios/{nome_usuario}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_session)):
-    db_user = session.scalar(
-        select(User).where((User.nome_usuario == nome_usuario))
-    )
-    if db_user:
-        return db_user
-    
-    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
+
     db_user = session.scalar(
         select(User).where(
             (User.nome_usuario == dados.nome_usuario) |
@@ -150,16 +107,14 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
                 status_code=HTTPStatus.CONFLICT,
                 detail="Nome de usuário já existe",
             )
-        elif db_user.email == dados.email:
+        if db_user.email == dados.email:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail="Email já existe",
             )
 
     db_user = User(
-        nome_usuario=dados.nome_usuario,
-        senha=dados.senha,
-        email=dados.email
+        nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
     )
 
     session.add(db_user)
@@ -169,19 +124,47 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
     return db_user
 
 
-@app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_session)):
+@app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
+def get_todos_usuarios(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
+    ):
+    usuarios = session.scalars(select(User).offset(skip).limit(limit)).all()
+    return usuarios
 
+
+@app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
+def get_todos_usuarios(skip: int = 0, limit: int = 100, session: Session = Depends(get_session)):
+    usuarios = session.scalars(select(User).offset(skip).limit(limit)).all()
+    return usuarios
+
+
+@app.get("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def get_usuario_por_id(id: int, session: Session = Depends(get_session)):
     db_user = session.scalar(select(User).where(User.id == id))
     if not db_user:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado"
-            )
-    
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+    return db_user
+
+
+@app.get("/usuarios/nome/{nome_usuario}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.nome_usuario == nome_usuario))
+    if not db_user:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+    return db_user
+
+@app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == id))
+
+    if not db_user:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+
     try:
         db_user.nome_usuario = dados.nome_usuario
         db_user.senha = dados.senha
         db_user.email = dados.email
+
         session.commit()
         session.refresh(db_user)
 
@@ -190,8 +173,8 @@ def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_s
     except IntegrityError:
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
-              detail="Nome do usuário ou email já existe"
-            )
+            detail="Nome de usuário ou email já existe"
+        )
 
 
 @app.delete("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
@@ -199,11 +182,9 @@ def deletar_usuario(id: int, session: Session = Depends(get_session)):
     db_user = session.scalar(select(User).where(User.id == id))
 
     if not db_user:
-        raise HTTPException(
-        status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado"
-        )
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
     session.delete(db_user)
     session.commit()
 
-    return db_user 
+    return db_user
