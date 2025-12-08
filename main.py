@@ -74,7 +74,6 @@ def update_receita(id: int, dados: CreateReceita):
     if not receita:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
-    # Verifica se outra receita já usa o novo nome
     for r in receitas:
         if r.nome.lower() == dados.nome.lower() and r.id != id:
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
@@ -93,8 +92,6 @@ def deletar_receita(id: int):
             return receitas.pop(i)
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
-
-# ------------------------ USUÁRIOS ----------------------------
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
