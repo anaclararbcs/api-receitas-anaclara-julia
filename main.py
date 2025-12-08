@@ -29,7 +29,6 @@ def hello():
     return {"title": "Livro de Receitas"}
 
 
-
 @app.get("/receitas", response_model=List[Receita], status_code=HTTPStatus.OK)
 def get_todas_receitas():
     return receitas
@@ -64,6 +63,7 @@ def create_receita(dados: CreateReceita):
         ingredientes=dados.ingredientes,
         modo_de_preparo=dados.modo_de_preparo
     )
+
     receitas.append(nova_receita)
     return nova_receita
 
@@ -81,6 +81,7 @@ def update_receita(id: int, dados: CreateReceita):
     receita.nome = dados.nome
     receita.ingredientes = dados.ingredientes
     receita.modo_de_preparo = dados.modo_de_preparo
+
     return receita
 
 
@@ -90,6 +91,7 @@ def deletar_receita(id: int):
         if receitas[i].id == id:
             return receitas.pop(i)
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
@@ -114,7 +116,9 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
             )
 
     db_user = User(
-        nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
+        nome_usuario=dados.nome_usuario,
+        senha=dados.senha,
+        email=dados.email
     )
 
     session.add(db_user)
@@ -122,14 +126,6 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
     session.refresh(db_user)
 
     return db_user
-
-
-@app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
-def get_todos_usuarios(
-    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
-    ):
-    usuarios = session.scalars(select(User).offset(skip).limit(limit)).all()
-    return usuarios
 
 
 @app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
@@ -152,6 +148,7 @@ def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_sessi
     if not db_user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
     return db_user
+
 
 @app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
 def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_session)):
