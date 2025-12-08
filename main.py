@@ -95,7 +95,6 @@ def deletar_receita(id: int):
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
-
     db_user = session.scalar(
         select(User).where(
             (User.nome_usuario == dados.nome_usuario) |
