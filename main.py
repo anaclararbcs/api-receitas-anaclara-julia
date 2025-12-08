@@ -14,14 +14,14 @@ app = FastAPI(title="API de Receitas")
 
 
 def receita_existe(nome: str):
-    return any(receita.nome.lower() == nome.lower() for receita in receitas)
+     return any(receita.nome.lower() == nome.lower() for receita in receitas)
 
 
 def receita_por_id(id: int):
-    for receita in receitas:
+     for receita in receitas:
         if receita.id == id:
             return receita
-    return None
+        return None
 
 
 @app.get("/", status_code=HTTPStatus.OK)
@@ -45,27 +45,27 @@ def get_receita_por_id(id: int):
 
 @app.get("/receitas/{nome_receita}", response_model=Receita, status_code=HTTPStatus.OK)
 def get_receita_por_nome(nome_receita: str):
-    for receita in receitas:
+     for receita in receitas:
         if receita.nome.lower() == nome_receita.lower():
             return receita
-    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
 
 @app.post("/receitas", response_model=Receita, status_code=HTTPStatus.CREATED)
 def create_receita(dados: CreateReceita):
-    if receita_existe(dados.nome):
-        raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
+     if receita_existe(dados.nome):
+         raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
 
-    novo_id = 1 if not receitas else receitas[-1].id + 1
+     novo_id = 1 if not receitas else receitas[-1].id + 1
 
-    nova_receita = Receita(
-        id=novo_id,
+     nova_receita = Receita(
+         id=novo_id,
         nome=dados.nome,
         ingredientes=dados.ingredientes,
-        modo_de_preparo=dados.modo_de_preparo
-    )
-    receitas.append(nova_receita)
-    return nova_receita
+         modo_de_preparo=dados.modo_de_preparo
+     )
+     receitas.append(nova_receita)
+     return nova_receita
 
 
 @app.put("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
@@ -75,10 +75,10 @@ def update_receita(id: int, dados: CreateReceita):
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
     for r in receitas:
-        if r.nome.lower() == dados.nome.lower() and r.id != id:
-            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
+         if r.nome.lower() == dados.nome.lower() and r.id != id:
+             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Já existe uma receita com esse nome")
 
-    receita.nome = dados.nome
+         receita.nome = dados.nome
     receita.ingredientes = dados.ingredientes
     receita.modo_de_preparo = dados.modo_de_preparo
     return receita
@@ -88,20 +88,20 @@ def update_receita(id: int, dados: CreateReceita):
 def deletar_receita(id: int):
     for i in range(len(receitas)):
         if receitas[i].id == id:
-            return receitas.pop(i)
+             return receitas.pop(i)
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
 @app.post("/usuarios", response_model=UsuarioPublic, status_code=HTTPStatus.CREATED)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
 
-    db_user = session.scalar(
+     db_user = session.scalar(
         select(User).where(
-            (User.nome_usuario == dados.nome_usuario) |
-            (User.email == dados.email)
+          (User.nome_usuario == dados.nome_usuario) |
+             (User.email == dados.email)
         )
-    )
+     )
 
-    if db_user:
+     if db_user:
         if db_user.nome_usuario == dados.nome_usuario:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
@@ -113,15 +113,15 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
                 detail="Email já existe",
             )
 
-    db_user = User(
+        db_user = User(
         nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
     )
 
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+     session.add(db_user)
+     session.commit()
+     session.refresh(db_user)
 
-    return db_user
+     return db_user
 
 
 @app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
@@ -160,6 +160,7 @@ def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_s
     if not db_user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
+
     try:
         db_user.nome_usuario = dados.nome_usuario
         db_user.senha = dados.senha
@@ -168,21 +169,20 @@ def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_s
         session.commit()
         session.refresh(db_user)
 
-        return db_user
+    return db_user
 
-    except IntegrityError:
-        raise HTTPException(
-            status_code=HTTPStatus.CONFLICT,
-            detail="Nome de usuário ou email já existe"
+   except IntegrityError:
+    raise HTTPException(
+        status_code=HTTPStatus.CONFLICT,
+        detail="Nome de usuário ou email já existe"
         )
-
 
 @app.delete("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
 def deletar_usuario(id: int, session: Session = Depends(get_session)):
     db_user = session.scalar(select(User).where(User.id == id))
 
     if not db_user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+      raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
     session.delete(db_user)
     session.commit()
